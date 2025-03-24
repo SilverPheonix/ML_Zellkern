@@ -50,10 +50,33 @@ def region_growing(binary_image):
 
 # 5. Analyse der Regionen
 def analyze_regions(labels):
+    # Regionen finden und analysieren
     regions = measure.regionprops(labels)
     print("Region Properties:")
     for region in regions:
         print(f"Region center: {region.centroid}, Area: {region.area}")
+    
+    # Berechne den Durchschnittswert der Flächen
+    areas = [region.area for region in regions]
+    avg_area = np.mean(areas) if areas else 0  # Falls keine Regionen existieren
+    
+    # Setze das Minimum als 10 % des Durchschnitts
+    min_area = 0.1 * avg_area
+    
+    print(f"Durchschnittliche Regionengröße: {avg_area:.2f}, Minimum für Filterung: {min_area:.2f}")
+
+    # Erstelle ein neues Label-Bild, das nur große Regionen enthält
+    filtered_labels = np.zeros_like(labels)
+
+    print("Filtered Region Properties:")
+    for region in regions:
+        if region.area >= min_area:
+            filtered_labels[labels == region.label] = region.label
+            print(f"Region center: {region.centroid}, Area: {region.area}")
+    
+    show_image(filtered_labels, "Filtered Regions", cmap="nipy_spectral")
+    return filtered_labels
+
 
 # 6. Ergebnisse speichern
 # Funktioniert noch nicht ganz
@@ -84,8 +107,9 @@ def main():
     preprocessed_image = preprocess_image(image)
     binary_image = threshold_image(preprocessed_image)
     labels = region_growing(binary_image)
-    analyze_regions(labels)
-    save_results(labels, output_path)
+    filtered_labels = analyze_regions(labels)
+    save_results(filtered_labels, output_path)
+
 
 
 main()
