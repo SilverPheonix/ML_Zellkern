@@ -5,9 +5,8 @@ import cv2
 from PIL import Image
 import matplotlib.pyplot as plt
 
-# load original input image
-
-image = cv2.imread("./output/test_masking/Figure_1.png", cv2.IMREAD_ANYCOLOR)
+'''Can be deleted CV2 is not used in this code anymore'''
+#image = cv2.imread("./output/test_masking/Figure_1.png", cv2.IMREAD_ANYCOLOR)
 #cv2.imshow("Original", image)
 
 
@@ -15,7 +14,7 @@ im = Image.open('./output/test_masking/Figure_1.png').convert("RGBA")
 pix = im.load()
 #get size of image
 width, height = (im.size)
-print (pix[309,214])  # Get the RGBA Value of the a pixel of an image
+#print (pix[309,214])  # Get the RGBA Value of the a pixel of an image
 
 #convert image to array
 image_array = np.array(im)
@@ -41,7 +40,7 @@ plt.axis('off')
 plt.show()
 
 
-# Make sure mask is boolean for masking
+# Check if mask is boolean for masking
 mask_bool = mask == 255
 
 # Create a masked version
