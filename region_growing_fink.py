@@ -8,6 +8,7 @@
 # Import der notwendigen Bibliotheken
 import cv2
 import numpy as np
+import numpy.ma as ma
 from skimage import io, filters, measure, morphology, color
 import matplotlib.pyplot as plt
 
@@ -73,10 +74,25 @@ def analyze_regions(labels):
         if region.area >= min_area:
             filtered_labels[labels == region.label] = region.label
             print(f"Region center: {region.centroid}, Area: {region.area}")
-    
+
     show_image(filtered_labels, "Filtered Regions", cmap="nipy_spectral")
     return filtered_labels
 
+# Erstellen der Maske
+def create_bitmask(filtered_labels):# <class 'numpy.ndarray'>
+    #Create boolean mask where region labels > 0; mask with True for region pixels, False for background
+    boolean_mask = filtered_labels > 0
+    #Convert boolean mask to integer mask 
+    bitmask = boolean_mask.astype(np.uint8)
+
+    show_image(bitmask, "Binary Bitmask", cmap="gray")
+    
+    return bitmask
+
+# Speichern der Maske
+def save_bitmask(bitmask):
+    outfile = "output/bitmask.npy"
+    np.save(outfile, bitmask)
 
 # 6. Ergebnisse speichern
 # Funktioniert noch nicht ganz
@@ -108,6 +124,8 @@ def main():
     binary_image = threshold_image(preprocessed_image)
     labels = region_growing(binary_image)
     filtered_labels = analyze_regions(labels)
+    bitmask = create_bitmask (filtered_labels)
+    save_bitmask(bitmask)
     save_results(filtered_labels, output_path)
 
 
