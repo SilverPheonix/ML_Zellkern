@@ -199,13 +199,16 @@ def load_manual_bitmask(manual_mask_path):
     #show_image(bitmask, "Manual Bitmask", cmap="gray")
     return bitmask
 
+def save_bitmask(bitmask, output_path):
+    io.imsave(output_path, bitmask.astype(np.uint8) * 255)
+    print(f"Bitmask saved to {output_path}")
+
+
 # Hauptprogramm
 def main():
     # Pfad zum Eingabebild
-    # good examples: data/Ex 3 day 02-1_image_BGR- Blue.tif, data/Ex 3 day 09-1_image_BGR- Blue.tif
     input_path = "output/test_masking/2_Blue.tif"
     output_path = "output/segmented_image.png"
-    manual_mask_path = "output/test_masking/2_manual_bitmask.png"
 
     # Speicherliste für Anzeige
     images = []
@@ -224,7 +227,7 @@ def main():
     labels = region_growing(binary_image)
     filtered_labels = analyze_regions(labels)
     bitmask = create_bitmask (filtered_labels)
-    manual_bitmask = load_manual_bitmask(manual_mask_path)
+    save_bitmask(bitmask, "output/test_masking/2_predicted_bitmask.png")
 
     masked_image = apply_bitmask(bitmask)
     images.append(masked_image)
@@ -233,18 +236,6 @@ def main():
     show_results_grid(images, titles, cols=2, cmap="gray")
 
     save_results(filtered_labels, output_path)
-
-    print("\n--- Evaluation ---")
-    CMROC.evaluate_segmentation(bitmask, manual_bitmask)
-
-    # print("\n--- ROC-Kurve ---")
-    # CMROC.plot_roc_curve(preprocessed_image, manual_bitmask)
-
-    # Zellgrößen analysieren
-    auto_props, manual_props = CMROC.analyze_cell_sizes(bitmask, manual_bitmask)
-
-    # Fehler anhand Zellgröße analysieren
-    CMROC.find_fp_fn_cells(auto_props, manual_props, bitmask, manual_bitmask)
 
 
 main()
