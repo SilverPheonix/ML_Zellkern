@@ -6,6 +6,7 @@
 # pip install opencv-python-headless scikit-image matplotlib numpy
 
 # Import der notwendigen Bibliotheken
+import os
 import cv2
 import numpy as np
 import numpy.ma as ma
@@ -177,6 +178,25 @@ def show_results_grid(images, titles, cols=3, figsize=(15, 10), cmap="gray"):
 
     plt.tight_layout()
     plt.show()
+    
+def load_manual_bitmask(manual_mask_path):
+    if not os.path.exists(manual_mask_path):
+        raise FileNotFoundError(f"Manual mask not found: {manual_mask_path}")
+
+    manual_mask = io.imread(manual_mask_path)
+
+    # Wenn Bild 4 Kanäle hat (RGBA), nur Helligkeit verwenden
+    if manual_mask.ndim == 3:
+        if manual_mask.shape[2] == 4:
+            # Alpha-Kanal ignorieren oder Helligkeit aus RGB berechnen
+            manual_mask = color.rgb2gray(manual_mask[:, :, :3])
+        else:
+            manual_mask = color.rgb2gray(manual_mask)
+
+    binary_mask = manual_mask > 0.5
+    bitmask = binary_mask.astype(np.uint8)
+    #show_image(bitmask, "Manual Bitmask", cmap="gray")
+    return bitmask
 
 # Hauptprogramm
 def main():
@@ -184,6 +204,7 @@ def main():
     # good examples: data/Ex 3 day 02-1_image_BGR- Blue.tif, data/Ex 3 day 09-1_image_BGR- Blue.tif
     input_path = "output/test_masking/2_Blue.tif"
     output_path = "output/segmented_image.tif"
+    manual_mask_path = "output/test_masking/2_manual_bitmask.png"
 
     # Speicherliste für Anzeige
     images = []
@@ -202,6 +223,7 @@ def main():
     labels = region_growing(binary_image)
     filtered_labels = analyze_regions(labels)
     bitmask = create_bitmask (filtered_labels)
+    manual_bitmask = load_manual_bitmask(manual_mask_path)
 
     masked_image = apply_bitmask(bitmask)
     images.append(masked_image)
