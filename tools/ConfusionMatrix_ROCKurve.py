@@ -1,15 +1,11 @@
+
+# Installiere die benötigten Bibliotheken mit folgendem Befehl:
+# pip install scikit-learn
+
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import io, color
 from sklearn.metrics import confusion_matrix, roc_curve, auc
-
-# Funktion zum Laden der Ground-Truth-Maske (manuell erstellte Maske mit Zellen)
-def load_ground_truth(path):
-    gt = io.imread(path)  # Bild laden
-    if len(gt.shape) == 3:  # Falls es ein RGB-Bild ist
-        gt = color.rgb2gray(gt)  # In Graustufen umwandeln
-    gt = gt > 0  # Alle Pixel > 0 gelten als Zellmaske (True)
-    return gt.astype(np.uint8)  # In binäre Maske umwandeln (0 und 1)
 
 # Auswertung der Segmentierung anhand einer Konfusionsmatrix
 def evaluate_segmentation(pred_mask, true_mask):
@@ -31,36 +27,27 @@ def evaluate_segmentation(pred_mask, true_mask):
     print(f"Specificity: {specificity:.2f}")
     print(f"Precision: {precision:.2f}")
 
-# Funktion zur Erstellung einer ROC-Kurve
-def plot_roc_curve(image, true_mask):
-    # Ground Truth als 1D-Array
-    flat_true = true_mask.flatten()
+def plot_roc_curve(probability_image, true_mask):
+    # Flatten ground truth and image to 1D
+    y_true = true_mask.flatten()
+    y_scores = probability_image.flatten()
 
-    # Listen für False-Positive-Rate (FPR) und True-Positive-Rate (TPR)
-    fpr_list, tpr_list = [], []
+    # Berechne FPR, TPR, Thresholds für alle möglichen Schwellenwerte
+    fpr, tpr, thresholds = roc_curve(y_true, y_scores)
 
-    # Verschiedene Schwellenwerte (Thresholds) durchtesten von 0.1 bis 0.9
-    thresholds = np.linspace(0.1, 0.9, 20)
-    for thresh in thresholds:
-        # Maske basierend auf Schwellenwert berechnen
-        pred_mask = (image > thresh).astype(np.uint8)
-        flat_pred = pred_mask.flatten()
+    # AUC berechnen
+    roc_auc = auc(fpr, tpr)
 
-        # ROC-Kurve berechnen: gibt mehrere Punkte zurück, aber wir nehmen den "positiven" Punkt bei Index 1
-        fpr, tpr, _ = roc_curve(flat_true, flat_pred)
-        fpr_list.append(fpr[1])
-        tpr_list.append(tpr[1])
-
-    # AUC (Area Under Curve) berechnen – Maß für die Qualität des Klassifikators
-    roc_auc = auc(fpr_list, tpr_list)
-
-    # ROC-Kurve zeichnen
-    plt.figure()
-    plt.plot(fpr_list, tpr_list, label=f'ROC curve (AUC = {roc_auc:.2f})')
-    plt.plot([0, 1], [0, 1], 'k--')  # Diagonale als Referenzlinie (zufälliger Klassifikator)
+    # Plot
+    plt.figure(figsize=(8, 6))
+    plt.plot(fpr, tpr, color='blue', lw=2, label=f"ROC Curve (AUC = {roc_auc:.2f})")
+    plt.plot([0, 1], [0, 1], color='black', lw=1, linestyle='--', label="Random Classifier")
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
     plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate (Sensitivity)")
-    plt.title("ROC Curve")
-    plt.legend()
+    plt.ylabel("True Positive Rate (Recall)")
+    plt.title("Receiver Operating Characteristic (ROC)")
+    plt.legend(loc="lower right")
     plt.grid(True)
     plt.show()
+

@@ -3,7 +3,7 @@
 # Anleitung zur Installation für Teammitglieder
 # Stelle sicher, dass Python installiert ist (empfohlen: Python 3.8 oder neuer).
 # Installiere die benötigten Bibliotheken mit folgendem Befehl:
-# pip install opencv-python-headless scikit-image matplotlib numpy
+# pip install opencv-python-headless scikit-image matplotlib numpy scikit-learn
 
 # Import der notwendigen Bibliotheken
 import os
@@ -13,6 +13,7 @@ import numpy.ma as ma
 from skimage import io, filters, measure, morphology, color
 import matplotlib.pyplot as plt
 from skimage.filters import threshold_local
+import tools.ConfusionMatrix_ROCKurve as CMROC
 
 # Funktion zur Anzeige von Bildern
 def show_image(image, title, cmap="gray"):
@@ -203,7 +204,7 @@ def main():
     # Pfad zum Eingabebild
     # good examples: data/Ex 3 day 02-1_image_BGR- Blue.tif, data/Ex 3 day 09-1_image_BGR- Blue.tif
     input_path = "output/test_masking/2_Blue.tif"
-    output_path = "output/segmented_image.tif"
+    output_path = "output/segmented_image.png"
     manual_mask_path = "output/test_masking/2_manual_bitmask.png"
 
     # Speicherliste für Anzeige
@@ -232,5 +233,11 @@ def main():
     show_results_grid(images, titles, cols=3, cmap="gray")
 
     save_results(filtered_labels, output_path)
+
+    print("\n--- Evaluation ---")
+    CMROC.evaluate_segmentation(bitmask, manual_bitmask)
+
+    print("\n--- ROC-Kurve ---")
+    CMROC.plot_roc_curve(preprocessed_image, manual_bitmask)
 
 main()
