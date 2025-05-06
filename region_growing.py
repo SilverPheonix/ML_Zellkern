@@ -230,14 +230,21 @@ def main():
     images.append(masked_image)
     titles.append("Masked Image")
 
-    show_results_grid(images, titles, cols=3, cmap="gray")
+    show_results_grid(images, titles, cols=2, cmap="gray")
 
     save_results(filtered_labels, output_path)
 
     print("\n--- Evaluation ---")
     CMROC.evaluate_segmentation(bitmask, manual_bitmask)
 
-    print("\n--- ROC-Kurve ---")
-    CMROC.plot_roc_curve(preprocessed_image, manual_bitmask)
+    # print("\n--- ROC-Kurve ---")
+    # CMROC.plot_roc_curve(preprocessed_image, manual_bitmask)
+
+    # Zellgrößen analysieren
+    auto_props, manual_props = CMROC.analyze_cell_sizes(bitmask, manual_bitmask)
+
+    # Fehler anhand Zellgröße analysieren
+    CMROC.find_fp_fn_cells(auto_props, manual_props, bitmask, manual_bitmask)
+
 
 main()
