@@ -23,13 +23,6 @@ def create_comparison_overlay(predicted_mask, manual_mask, output_path="output/c
     color_image[tn] = [0, 0, 0]       # Schwarz
 
     imsave(output_path, color_image)
-    
-    # Als Plot anzeigen
-    plt.figure(figsize=(8, 8))
-    plt.imshow(color_image)
-    plt.title("Vergleich: Automatisch vs. Manuell")
-    plt.axis("off")
-    plt.show()
 
     return color_image
 
@@ -41,9 +34,9 @@ def evaluate_segmentation(pred_mask, true_mask):
     # Konfusionsmatrix berechnen: tn = True Negative, fp = False Positive, fn = False Negative, tp = True Positive
     tn, fp, fn, tp = confusion_matrix(true, pred, labels=[0, 1]).ravel()
 
-    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
-    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0 # Trefferquote (Recall)
+    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0 # Spezifität (Wie gut wird Hintergrund erkannt?)
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0 # Genauigkeit der Positiv-Erkennung
 
     # Ergebnisse ausgeben
     print(f"TP: {tp}, FP: {fp}, FN: {fn}, TN: {tn}")
@@ -117,7 +110,14 @@ def main():
     evaluate_segmentation(auto_mask, manual_mask)
     auto_props, manual_props = analyze_cell_sizes(auto_mask, manual_mask)
     find_fp_fn_cells(auto_props, manual_props, auto_mask, manual_mask)
-    create_comparison_overlay(auto_mask, manual_mask)
+    color_image = create_comparison_overlay(auto_mask, manual_mask)
+    
+    # Als Plot anzeigen
+    plt.figure(figsize=(8, 8))
+    plt.imshow(color_image)
+    plt.title("Vergleich: Automatisch vs. Manuell")
+    plt.axis("off")
+    plt.show()
 
 if __name__ == "__main__":
     main()
