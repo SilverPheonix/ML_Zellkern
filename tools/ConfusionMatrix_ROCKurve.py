@@ -95,6 +95,30 @@ def load_mask(path):
         mask = color.rgb2gray(mask)
     return (mask > 0.5).astype(np.uint8)
 
+def analyze_cells_detailed(auto_props, manual_props, auto_mask, manual_mask):
+    results = []
+
+    for m_region in manual_props:
+        m_mask = (label(manual_mask) == m_region.label)
+        m_area = m_region.area
+        overlap_mask = m_mask & auto_mask
+        overlap_area = np.sum(overlap_mask)
+
+        false_negative_area = np.sum(m_mask) - overlap_area
+        false_positive_area = np.sum((label(auto_mask) > 0) & (~m_mask)) - (np.sum(auto_mask) - overlap_area)
+
+        results.append({
+            "ManualArea": m_area,
+            "TP_pixels": overlap_area,
+            "TP_%": overlap_area / m_area * 100 if m_area > 0 else 0,
+            "FN_pixels": false_negative_area,
+            "FN_%": false_negative_area / m_area * 100 if m_area > 0 else 0,
+            "FP_pixels": max(false_positive_area, 0),  # neg. clipping vermeiden
+            "FP_%": max(false_positive_area, 0) / m_area * 100 if m_area > 0 else 0,
+        })
+
+    return results
+
 
 def main():
     auto_mask_path = "output/test_masking/2_predicted_bitmask.png"
