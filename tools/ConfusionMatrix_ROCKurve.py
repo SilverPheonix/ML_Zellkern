@@ -44,6 +44,16 @@ def evaluate_segmentation(pred_mask, true_mask):
     print(f"Specificity: {specificity:.2f}")
     print(f"Precision: {precision:.2f}")
 
+    return {
+        "TP": tp,
+        "FP": fp,
+        "FN": fn,
+        "TN": tn,
+        "Sensitivity": sensitivity,
+        "Specificity": specificity,
+        "Precision": precision
+    }
+
 def analyze_cell_sizes(auto_mask, manual_mask):
     # Labels erzeugen
     labeled_auto = label(auto_mask)
@@ -85,7 +95,7 @@ def find_fp_fn_cells(auto_props, manual_props, auto_mask, manual_mask):
     print("\n--- Fehleranalyse ---")
     print(f"Falsch Positive (n={len(false_positives)}): Ø Größe = {np.mean(false_positives) if false_positives else 0:.2f}")
     print(f"Falsch Negative (n={len(false_negatives)}): Ø Größe = {np.mean(false_negatives) if false_negatives else 0:.2f}")
-
+    return false_positives, false_negatives
 
 def load_mask(path):
     mask = io.imread(path)
