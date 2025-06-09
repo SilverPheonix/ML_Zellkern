@@ -1,17 +1,12 @@
+# main_analysis.py
 import os
 from skimage import io
 from tools import ConfusionMatrix_ROCKurve as CMROC
-from region_growing import (
-    load_image, preprocess_image, compare_threshold_methods,
-    load_manual_bitmask, threshold_image, region_growing,
-    analyze_regions, create_bitmask, save_bitmask,
-    apply_bitmask, save_results
-)
+from region_growing import *
 import pandas as pd
 import matplotlib.pyplot as plt
 import csv
 import numpy as np
-
 
 def write_csv_results(csv_path, results):
     fieldnames = [
@@ -26,34 +21,25 @@ def write_csv_results(csv_path, results):
         for row in results:
             writer.writerow(row)
 
-
-# === Threshold-Vergleich ===
-
 def run_threshold_comparison(image, manual_mask, rgb_path, output_dir, global_results):
     results = []
-
     method_results = compare_threshold_methods(image, output_dir, rgb_path)
 
     for bitmask, _, name in method_results:
-        print(f"\n=== Evaluation für Methode: {name} ===")
         overlay = CMROC.create_comparison_overlay(
             predicted_mask=bitmask,
             manual_mask=manual_mask,
             output_path=os.path.join(output_dir, f"{name}_overlay.png")
         )
-        auto_props, manual_props = CMROC.analyze_cell_sizes(bitmask, manual_mask)
 
-        # Zell-Analyse
+        auto_props, manual_props = CMROC.analyze_cell_sizes(bitmask, manual_mask)
         zellstats = CMROC.analyze_cells_detailed(auto_props, manual_props, bitmask, manual_mask)
         for z in zellstats:
             z['ThresholdMethod'] = name
             results.append(z)
 
-        # Metriken berechnen
         eval_result = CMROC.evaluate_segmentation(bitmask, manual_mask)
-        fp_sizes, fn_sizes = CMROC.find_fp_fn_cells(
-            auto_props, manual_props, bitmask, manual_mask
-        )
+        fp_sizes, fn_sizes = CMROC.find_fp_fn_cells(auto_props, manual_props, bitmask, manual_mask)
 
         global_results.append({
             "Bild": os.path.basename(rgb_path),
@@ -71,52 +57,30 @@ def run_threshold_comparison(image, manual_mask, rgb_path, output_dir, global_re
             "Zellen (Auto)": len(auto_props),
         })
 
-        # Overlay anzeigen
-        plt.figure(figsize=(6, 6))
-        plt.imshow(overlay)
-        plt.title(f"Overlay {name} – Bild {os.path.basename(rgb_path)}")
-        plt.axis("off")
-        plt.tight_layout()
-        plt.show()
-
     return results
 
-
-# === Hauptausführung für alle Bilder ===
-
 def main():
-    image_indices = range(1, 7)
-    summary_results = []
-    global_eval_results = []  # CSV für TP, FP, FN, etc.
+    image_names = ["1", "2", "3", "4", "5"]
+    zellstats_all = []
+    global_results = []
 
-    for i in image_indices:
-        gray_path = f"output/test_masking/{i}_Blue.tif"
-        rgb_path = f"output/test_masking/{i}_Blue.tif"
-        manual_mask_path = f"output/test_masking/{i}_manual_bitmask_elaine.png"
-        output_dir = f"output/test_masking/{i}_results"
+    for name in image_names:
+        image_path = f"data/test_masking/{name}_Blue.tif"
+        manual_path = f"data/test_masking/{name}_manual_bitmask_elaine.png"
+        output_dir = f"output/test_masking/{name}_results/"
 
-        print(f"\n\n===== Verarbeitung Bild {i} =====")
-        os.makedirs(output_dir, exist_ok=True)
-
-        gray_img = load_image(gray_path)
+        gray_img = load_image(image_path)
+        manual_mask = load_manual_bitmask(manual_path)
         preprocessed = preprocess_image(gray_img)
-        manual_mask = load_manual_bitmask(manual_mask_path)
 
-        results = run_threshold_comparison(preprocessed, manual_mask, rgb_path, output_dir, global_eval_results)
+        zellstats = run_threshold_comparison(preprocessed, manual_mask, image_path, output_dir, global_results)
+        for entry in zellstats:
+            entry["Bild"] = name
+        zellstats_all.extend(zellstats)
 
-        for res in results:
-            res['ImageIndex'] = i
-            summary_results.append(res)
-
-    # Zellbasierte Statistik
-    df = pd.DataFrame(summary_results)
-    df.to_csv("output/summary_segmentation_evaluation.csv", index=False)
-    print("\nZellstatistik gespeichert unter: output/summary_segmentation_evaluation.csv")
-
-    # Bildweise Evaluation (TP, FP, etc.)
-    write_csv_results("output/summary_global_metrics.csv", global_eval_results)
-    print("Globale Metriken gespeichert unter: output/summary_global_metrics.csv")
-
+    write_csv_results("output/global_summary.csv", global_results)
+    pd.DataFrame(zellstats_all).to_csv("output/zellstats.csv", index=False)
+    print("Alle Auswertungen abgeschlossen.")
 
 if __name__ == "__main__":
     main()
