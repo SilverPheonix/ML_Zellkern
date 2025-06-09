@@ -10,6 +10,7 @@ def main():
         "Elaine": "data/test_masking/2_manual_bitmask_elaine.png",
         "Isabella": "data/test_masking/2_manual_bitmask_Isabella.png",
         "Lisa": "data/test_masking/2_manual_bitmask.png",
+        "Marcin": "data/test_masking/2_manual_bitmask_zboroch.png",
     }
 
     masks = {name: CMROC.load_mask(path) for name, path in manual_masks.items()}
