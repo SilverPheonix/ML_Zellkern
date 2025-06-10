@@ -60,7 +60,7 @@ def run_threshold_comparison(image, manual_mask, rgb_path, output_dir, global_re
     return results
 
 def main():
-    image_names = ["1", "2", "3", "4", "5"]
+    image_names = ["1", "2", "3", "4", "5", "6"]
     zellstats_all = []
     global_results = []
 
