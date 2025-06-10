@@ -66,7 +66,7 @@ def main():
 
     for name in image_names:
         image_path = f"data/test_masking/{name}_Blue.tif"
-        manual_path = f"data/test_masking/{name}_manual_bitmask_elaine.png"
+        manual_path = f"data/test_masking/{name}_manual_bitmask_zboroch.png"
         output_dir = f"output/test_masking/{name}_results/"
 
         gray_img = load_image(image_path)
