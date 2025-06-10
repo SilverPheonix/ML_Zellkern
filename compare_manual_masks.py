@@ -9,7 +9,7 @@ def main():
     manual_masks = {
         "Elaine": "data/test_masking/2_manual_bitmask_elaine.png",
         "Isabella": "data/test_masking/2_manual_bitmask_Isabella.png",
-        "Lisa": "data/test_masking/2_manual_bitmask.png",
+        "Lisa": "data/test_masking/2_manual_bitmask_mayrhofer.png",
         "Marcin": "data/test_masking/2_manual_bitmask_zboroch.png",
     }
 
