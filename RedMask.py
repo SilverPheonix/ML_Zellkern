@@ -45,11 +45,11 @@ def main():
         if not Path(p).exists():
             raise FileNotFoundError(f"Datei nicht gefunden: {p}")
 
-    # 1️⃣ Graubild laden
+    # Graubild laden
     gray = load_gray(INPUT_GRAY)
     show_image(gray, "Graubild", cmap="gray")
 
-    # 2️⃣ Li-Threshold -> Maske
+    # Li-Threshold -> Maske
     thr = filters.threshold_li(gray)
     mask = gray > thr
     mask_u8 = (mask.astype(np.uint8) * 255)
@@ -57,7 +57,7 @@ def main():
     print(f"Maske gespeichert: {OUT_MASK}")
     show_image(mask, "Li-Maske", cmap="gray")
 
-    # 3️⃣ Rotbild laden und Maske anwenden
+    # Rotbild laden und Maske anwenden
     red_img = io.imread(INPUT_RED)
     masked_red = apply_mask_to_rgb(mask, red_img)
     io.imsave(OUT_APPLY, masked_red)

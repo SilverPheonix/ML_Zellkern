@@ -4,26 +4,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import io
+import os
 
 # ================== SETTINGS ==================
-INPUT_IMG        = r"output/test_masking/Li_on_red.png"  # Bild (wird unverändert angezeigt)
-AXIS             = 1     # 1 = Spaltensumme -> vertikale Linien, 0 = Zeilensumme -> horizontale Linien
-SMOOTH_WIN       = 0     # 1 = keine Glättung, größere Werte -> weniger Peaks
-MIN_DISTANCE     = 1    # Mindestabstand zwischen Peaks (Pixel entlang der Profilachse)
-
-# Mindesthöhe eines Peaks:
-MIN_HEIGHT_ABS   = None  # z.B. 2500.0 (fester Wert), oder None für Perzentil
-MIN_HEIGHT_PCTL  = 60    # nur verwendet, wenn ABS=None (0..100). Höher -> weniger Peaks
-
+INPUT_IMG        = r"output/test_masking/Li_on_red.png"  # Pfad zum Eingabebild
+AXIS             = 1     # 1 = Spaltensumme (vertikale Linien), 0 = Zeilensumme (horizontale Linien)
+MIN_DISTANCE     = 1     # Mindestabstand zwischen Peaks in Pixeln
+MIN_HEIGHT_ABS   = None  # Fester Schwellenwert für Peak-Höhe (z. B. 3000.0)
+MIN_HEIGHT_PCTL  = 60    # Prozentuale Schwelle (0–100), nur aktiv wenn ABS=None
 OUT_CURVE        = "peaks_curve.png"
 OUT_OVERLAY      = "peaks_overlay.png"
 # ==============================================
-
-
-def moving_average(x: np.ndarray, w: int) -> np.ndarray:
-    if w <= 1:
-        return x
-    return np.convolve(x, np.ones(w) / w, mode="same")
 
 
 def simple_peaks(y: np.ndarray, min_distance: int = 10, min_height: float | None = None) -> np.ndarray:
@@ -58,34 +49,34 @@ def main():
     img = io.imread(INPUT_IMG)
     print(f"Bildform: {img.shape}")
 
-    # --- Profil & Glättung ---
+    # --- Profil berechnen (ohne Glättung) ---
     prof = profile_from_image(img, AXIS).astype(float)
-    smooth = moving_average(prof, SMOOTH_WIN)
 
     # --- Mindesthöhe bestimmen ---
     if MIN_HEIGHT_ABS is not None:
         height_thr = float(MIN_HEIGHT_ABS)
     else:
-        height_thr = float(np.percentile(smooth, MIN_HEIGHT_PCTL))
+        height_thr = float(np.percentile(prof, MIN_HEIGHT_PCTL))
     print(f"Mindesthöhe (Schwelle) = {height_thr:.2f}")
 
     # --- Peaks finden ---
-    peaks = simple_peaks(smooth, min_distance=MIN_DISTANCE, min_height=height_thr)
+    peaks = simple_peaks(prof, min_distance=MIN_DISTANCE, min_height=height_thr)
 
-    # --- Kurvenplot speichern ---
+    # --- Kurvenplot speichern UND anzeigen ---
     x = np.arange(len(prof))
     plt.figure(figsize=(10, 5))
-    plt.plot(x, prof, label="Profil")
-    plt.plot(x, smooth, label=f"Glättung={SMOOTH_WIN}")
+    plt.plot(x, prof, label="Profil (unglättet)")
     plt.axhline(height_thr, linestyle=":", label=f"Min-Höhe={height_thr:.1f}")
     if peaks.size:
-        plt.scatter(peaks, smooth[peaks], color="red", marker="x", s=50,
+        plt.scatter(peaks, prof[peaks], color="red", marker="x", s=50,
                     label=f"Peaks n={len(peaks)}")
-    plt.xlabel("Index"); plt.ylabel("Summenintensität")
-    plt.legend(); plt.tight_layout()
+    plt.xlabel("Index")
+    plt.ylabel("Summenintensität")
+    plt.legend()
+    plt.tight_layout()
     plt.savefig(OUT_CURVE, dpi=150)
     print(f"Kurvenplot gespeichert: {OUT_CURVE}")
-    plt.close()
+    plt.show()  # jetzt wird die Kurve auch angezeigt
 
     # --- Overlay (auf Originalbild, unverändert) ---
     plt.figure(figsize=(10, 6))
@@ -98,18 +89,24 @@ def main():
             for p in peaks:
                 plt.axhline(p, color="cyan", linestyle="--", linewidth=1.2)
     plt.title("Peaks (Originalbild, unverändert)")
-    plt.axis("off"); plt.tight_layout()
+    plt.axis("off")
+    plt.tight_layout()
     plt.savefig(OUT_OVERLAY, dpi=150)
-    plt.show()
     print(f"Overlay gespeichert: {OUT_OVERLAY}")
+    plt.show()  #zeigt auch das Overlay an
+
+    # --- Optional: automatisch im Windows-Fotoanzeiger öffnen ---
+    if os.name == "nt":  # nur auf Windows
+        os.startfile(OUT_CURVE)
+        os.startfile(OUT_OVERLAY)
 
     # --- Konsolenausgabe ---
     if peaks.size:
-        print("Gefundene Peaks (Index -> Wert):")
+        print("\nGefundene Peaks (Index -> Wert):")
         for i in peaks:
-            print(f"{i}\t{smooth[i]:.2f}")
+            print(f"{i}\t{prof[i]:.2f}")
     else:
-        print("Keine Peaks gefunden – SMOOTH_WIN/MIN_DISTANCE/MIN_HEIGHT_* anpassen.")
+        print("Keine Peaks gefunden – MIN_DISTANCE oder MIN_HEIGHT_* anpassen.")
 
 
 if __name__ == "__main__":
