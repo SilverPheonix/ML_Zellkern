@@ -85,7 +85,7 @@ def process_tif_files_with_augmentation(source_folder, target_folder):
         print(f"Keine .tif-Dateien im Quellordner {source_folder} oder seinen Unterordnern gefunden.")
 
 # Beispielaufruf
-source_folder = "yH2AX/"  # Quellordner (zu ersetzen mit dem tatsächlichen Pfad)
+source_folder = "C:/Users/marci/Documents/ML_Zellkern/data\Ex 3 day 0/"  # Quellordner (zu ersetzen mit dem tatsächlichen Pfad)
 target_folder = "data/"   # Zielordner (zu ersetzen mit dem tatsächlichen Pfad)
 
 process_tif_files_with_augmentation(source_folder, target_folder)
