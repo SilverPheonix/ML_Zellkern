@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from skimage import io, color, filters, exposure, img_as_ubyte, img_as_uint
 
 # ===== Einstellungen =====
-INPUT = r"output/test_masking/1_Red.tif"  # DEIN Bild
+INPUT = r"output/test_masking/8_Red.tif"  # DEIN Bild
 OUT_DIR = r"output/test_masking"
 BLUR = 3                  # 0 = kein Blur, sonst 3/5
 METHOD = "otsu"           # "otsu" | "yen" | "li" | "triangle" | "percentile"
