@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<Info>
+  <ImageOverlay
+    type="Channel">
+    <Filter></Filter>
+    <ApplyColour>False</ApplyColour>
+    <WaveLength>0</WaveLength>
+    <HistogramSettings
+      blackLevel="0"
+      whiteLevel="255" />
+    <MixLevel>100</MixLevel>
+    <Gamma>1</Gamma>
+    <Exposure>0</Exposure>
+    <Description></Description>
+  </ImageOverlay>
+</Info>

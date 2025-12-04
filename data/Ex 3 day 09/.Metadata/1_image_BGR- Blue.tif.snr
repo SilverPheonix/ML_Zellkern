@@ -1,0 +1,446 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ahm-snapshot-document persistance-type="#2">
+  <unit name="TWAIN IMAGE SOURCE" id="IMAGE-SOURCE" exposed-type-id="#2000" type-ids="#2000" driver-token="#c35a9938" instance-id="0">
+    <interfaces>
+      <properties>
+        <property id="CHIPSIZE-X" ahm-id="#2000">
+          <value type="float">8.9784</value>
+        </property>
+        <property id="CHIPSIZE-Y" ahm-id="#2001">
+          <value type="float">6.708</value>
+        </property>
+        <property id="EXPOSURE-TIME" ahm-id="#2002">
+          <value type="enum">
+            <enum-value type="float">1.02000427</enum-value>179</value>
+        </property>
+        <property id="GAIN" ahm-id="#2003">
+          <value type="enum">
+            <enum-value type="float">7.01544189</enum-value>67</value>
+        </property>
+        <property id="ALL-FORMATS-ENABLED" ahm-id="#2008">
+          <value type="bool">0</value>
+        </property>
+        <property id="SENSITIVITY-BINNING-ENABLED" ahm-id="#200a">
+          <value type="bool">0</value>
+        </property>
+        <property id="RAW-IMAGE-ENABLED" ahm-id="#200d">
+          <value type="bool">0</value>
+        </property>
+        <property id="GRABBED-PIXEL-DEPTH" ahm-id="#200e">
+          <value type="enum">
+            <enum-value type="int">8</enum-value>0</value>
+        </property>
+        <property id="COLOUR-ENABLED" ahm-id="#200f">
+          <value type="bool">1</value>
+        </property>
+        <property id="CAPTURE-ROI" ahm-id="#2010">
+          <value type="rect">
+            <value type="float">67.19</value>
+            <value type="float">61.68</value>
+            <value type="float">73.3</value>
+            <value type="float">71.3</value>
+          </value>
+        </property>
+        <property id="CAPTURE-ROI-ENABLED" ahm-id="#2011">
+          <value type="bool">0</value>
+        </property>
+        <property id="FOCUS-ROI" ahm-id="#2012">
+          <value type="rect">
+            <value type="float">1.72</value>
+            <value type="float">27.29</value>
+            <value type="float">3.45</value>
+            <value type="float">30.95</value>
+          </value>
+        </property>
+        <property id="CAPTURE-FEEDBACK-ENABLED" ahm-id="#2013">
+          <value type="bool">1</value>
+        </property>
+        <property id="FLIP-HORIZONTAL" ahm-id="#2014">
+          <value type="bool">0</value>
+        </property>
+        <property id="FLIP-VERTICAL" ahm-id="#2015">
+          <value type="bool">0</value>
+        </property>
+        <property id="SHARPENING-LEVEL" ahm-id="#2017">
+          <value type="enum">
+            <enum-value type="int">0</enum-value>0</value>
+        </property>
+        <property id="AUTO-BRIGHTNESS-ENABLED" ahm-id="#2018">
+          <value type="bool">0</value>
+        </property>
+        <property id="BRIGHTNESS-LEVEL" ahm-id="#2019">
+          <value type="enum">
+            <enum-value type="float">65.0</enum-value>1300</value>
+        </property>
+        <property id="BLACK-LEVEL" ahm-id="#201b">
+          <value type="enum">
+            <enum-value type="float">0.0</enum-value>0</value>
+        </property>
+        <property id="WHITE-LEVEL" ahm-id="#201c">
+          <value type="enum">
+            <enum-value type="float">255.0</enum-value>255</value>
+        </property>
+        <property id="GAMMA-LEVEL" ahm-id="#201d">
+          <value type="enum">
+            <enum-value type="float">1.56919861</enum-value>147</value>
+        </property>
+        <property id="AUTO-GAMMA-ENABLED" ahm-id="#201e">
+          <value type="bool">0</value>
+        </property>
+        <property id="XSCALING" ahm-id="#201f">
+          <value type="enum">
+            <enum-value type="float">1.0</enum-value>0</value>
+        </property>
+        <property id="YSCALING" ahm-id="#2020">
+          <value type="enum">
+            <enum-value type="float">1.0</enum-value>0</value>
+        </property>
+        <property id="COOLING-ENABLED" ahm-id="#2021">
+          <value type="bool">1</value>
+        </property>
+        <property id="FLASHSYNC-ENABLED" ahm-id="#2022">
+          <value type="bool">0</value>
+        </property>
+        <property id="FLASHSYNC-INVERTED" ahm-id="#2023">
+          <value type="bool">0</value>
+        </property>
+        <property id="TRIGGER-MODE" ahm-id="#2024">
+          <value type="int">1</value>
+        </property>
+        <property id="TRIGGER-POLARITY" ahm-id="#2025">
+          <value type="int">1</value>
+        </property>
+        <property id="COLOUR-CORRECT-HUE" ahm-id="#2027">
+          <value type="float">0.0</value>
+        </property>
+        <property id="COLOUR-CORRECT-SAT" ahm-id="#2028">
+          <value type="float">0.0</value>
+        </property>
+        <property id="COLOUR-CORRECT-LUMINANCE" ahm-id="#2029">
+          <value type="float">0.0</value>
+        </property>
+        <property id="COLOUR-CORRECT-RED" ahm-id="#202a">
+          <value type="float">1.8404541</value>
+        </property>
+        <property id="COLOUR-CORRECT-GREEN" ahm-id="#202b">
+          <value type="float">1.0</value>
+        </property>
+        <property id="COLOUR-CORRECT-BLUE" ahm-id="#202c">
+          <value type="float">2.23149109</value>
+        </property>
+        <property id="LIVE-SHADING-ENABLED" ahm-id="#202d">
+          <value type="bool">0</value>
+        </property>
+        <property id="LIVE-UO-EXPOSURE-ENABLED" ahm-id="#202e">
+          <value type="bool">0</value>
+        </property>
+        <property id="LIVE-ZOOM-FOCUS-ENABLED" ahm-id="#202f">
+          <value type="bool">0</value>
+        </property>
+        <property id="COLOUR-SATURATION" ahm-id="#2030">
+          <value type="enum">
+            <enum-value type="float">1.449646</enum-value>29</value>
+        </property>
+        <property id="AUTO-BLACK-LEVEL-ENABLED" ahm-id="#2031">
+          <value type="bool">0</value>
+        </property>
+        <property id="AUTO-WHITE-LEVEL-ENABLED" ahm-id="#2032">
+          <value type="bool">0</value>
+        </property>
+        <property id="LIVE-PIXEL-WIDTH" ahm-id="#2033">
+          <value type="float">6.44999695</value>
+        </property>
+        <property id="LIVE-PIXEL-HEIGHT" ahm-id="#2034">
+          <value type="float">6.44999695</value>
+        </property>
+        <property id="CAPTURE-PIXEL-WIDTH" ahm-id="#2035">
+          <value type="float">6.44999695</value>
+        </property>
+        <property id="CAPTURE-PIXEL-HEIGHT" ahm-id="#2036">
+          <value type="float">6.44999695</value>
+        </property>
+        <property id="ACTIVE-INPUT-NAME" ahm-id="#2037">
+          <value type="string">DFC 300 FX R2</value>
+        </property>
+        <property id="ACTIVE-INPUT-SERIAL-NUMBER" ahm-id="#2038">
+          <value type="string">297710608</value>
+        </property>
+        <property id="???" ahm-id="#2039">
+          <value type="bool">0</value>
+        </property>
+        <property id="???" ahm-id="#203a">
+          <value type="bool">0</value>
+        </property>
+        <property id="???" ahm-id="#203b">
+          <value type="rect">
+            <value type="float">4.28</value>
+            <value type="float">13.51</value>
+            <value type="float">16.29</value>
+            <value type="float">58.82</value>
+          </value>
+        </property>
+        <property id="???" ahm-id="#203e">
+          <value type="int">0</value>
+        </property>
+        <property id="???" ahm-id="#203f">
+          <value type="int">0</value>
+        </property>
+        <property id="???" ahm-id="#2040">
+          <value type="int">0</value>
+        </property>
+        <property id="???" ahm-id="#2041">
+          <value type="int">0</value>
+        </property>
+        <property id="???" ahm-id="#2045">
+          <value type="enum">
+            <enum-value type="string">Twain Version 7.7.1.0</enum-value>0</value>
+        </property>
+        <property id="???" ahm-id="#2047">
+          <value type="bool">0</value>
+        </property>
+        <property id="???" ahm-id="#2048">
+          <value type="bool">0</value>
+        </property>
+        <property id="???" ahm-id="#204e">
+          <value type="int">1</value>
+        </property>
+        <property id="???" ahm-id="#204f">
+          <value type="enum">
+            <enum-value type="int">0</enum-value>0</value>
+        </property>
+        <property id="CLOSE-UI-AFTER-ACQUIRE" ahm-id="#27d0">
+          <value type="bool">0</value>
+        </property>
+        <property id="SHOW-COLOUR-WHEEL" ahm-id="#27d1">
+          <value type="bool">0</value>
+        </property>
+        <property id="COLOUR-CHECK-ENABLED" ahm-id="#27d2">
+          <value type="bool">0</value>
+        </property>
+        <property id="COLOUR-CHECK-ROI" ahm-id="#27d3">
+          <value type="rect">
+            <value type="float">0.0</value>
+            <value type="float">0.0</value>
+            <value type="float">99.98</value>
+            <value type="float">100.0</value>
+          </value>
+        </property>
+        <property id="SHOW-BWGAMMA-VALUES" ahm-id="#27d4">
+          <value type="bool">1</value>
+        </property>
+        <property id="ALWAYS-LIVE" ahm-id="#27d5">
+          <value type="bool">1</value>
+        </property>
+        <property id="EXPANDED-UI-NODES" ahm-id="#27d6">
+          <value type="int">0</value>
+        </property>
+        <property id="SHOW-RGB-VALUES" ahm-id="#27d7">
+          <value type="enum">
+            <enum-value type="int">0</enum-value>0</value>
+        </property>
+        <property id="???" ahm-id="#27dc">
+          <value type="bool">0</value>
+        </property>
+        <property id="???" ahm-id="#27dd">
+          <value type="bool">1</value>
+        </property>
+        <property id="???" ahm-id="#27de">
+          <value type="enum">
+            <enum-value type="int">1</enum-value>0</value>
+        </property>
+        <property id="???" ahm-id="#2898">
+          <value type="enum">
+            <enum-value type="int">0</enum-value>5</value>
+        </property>
+        <property id="???" ahm-id="#2899">
+          <value type="enum">
+            <enum-value type="int">1</enum-value>2</value>
+        </property>
+        <property id="???" ahm-id="#289a">
+          <value type="bool">0</value>
+        </property>
+        <property id="???" ahm-id="#289b">
+          <value type="enum">
+            <enum-value type="int">1</enum-value>0</value>
+        </property>
+        <property id="???" ahm-id="#289c">
+          <value type="string" />
+        </property>
+        <property id="???" ahm-id="#289d">
+          <value type="int">1</value>
+        </property>
+      </properties>
+    </interfaces>
+  </unit>
+  <unit name="DMI6000B" id="MICROSCOPE" exposed-type-id="#1000" type-ids="#1000" driver-token="#55c07d0d" instance-id="1">
+    <unit name="Nosepiece NOSEPIECE(6-POS)" id="MICROSCOPE-NOSEPIECE" exposed-type-id="#1004" type-ids="#1004,#1001,#1002,#1022" driver-token="#55c07d0d" instance-id="1">
+      <interfaces>
+        <basic-control-value current="3" min="1" max="6" desc="40x/0.60 11506201" />
+      </interfaces>
+    </unit>
+    <unit name="IL AXIS" id="MICROSCOPE-IL-AXIS" exposed-type-id="#1007" type-ids="#1007,#1023,#1001" driver-token="#55c07d0d" instance-id="1">
+      <unit name="ILTurret IL-TURRET(6-POS)" id="MICROSCOPE-IL-TURRET" exposed-type-id="#1008" type-ids="#1008,#1001,#1002,#1022,#1023" driver-token="#55c07d0d" instance-id="1">
+        <interfaces>
+          <basic-control-value current="1" min="1" max="6" desc="BGR" />
+        </interfaces>
+      </unit>
+      <unit name="IL FieldDiaphragm IL-FIELDDIAPH" id="MICROSCOPE-IL-FIELD-DIAPHRAGM" exposed-type-id="#102f" type-ids="#102f,#100a,#1001,#1002,#1023" driver-token="#55c07d0d" instance-id="1">
+        <interfaces>
+          <basic-control-value current="11" min="1" max="12" desc="CIRC 5" />
+        </interfaces>
+      </unit>
+      <unit name="IFW" id="MICROSCOPE-IL-FAST-FILTERS" exposed-type-id="#1045" type-ids="#1045,#1001,#1002,#1023" driver-token="#55c07d0d" instance-id="1">
+        <interfaces>
+          <basic-control-value current="1" min="1" max="3" desc="B" />
+          <properties />
+        </interfaces>
+      </unit>
+      <interfaces />
+    </unit>
+    <unit name="Lamp LAMP" id="MICROSCOPE-LAMP" exposed-type-id="#1017" type-ids="#1017,#1001,#1002" driver-token="#55c07d0d" instance-id="1">
+      <interfaces>
+        <basic-control-value current="0" min="0" max="255" />
+      </interfaces>
+    </unit>
+    <unit name="TL AXIS" id="MICROSCOPE-TL-AXIS" exposed-type-id="#1006" type-ids="#1006,#1024,#1001" driver-token="#55c07d0d" instance-id="1">
+      <unit name="TL ApertureDiaphragm TL-APERDIAPH" id="MICROSCOPE-TL-APERTURE-DIAPHRAGM" exposed-type-id="#102c" type-ids="#102c,#1009,#1001,#1002,#1024" driver-token="#55c07d0d" instance-id="1">
+        <interfaces>
+          <basic-control-value current="14" min="1" max="24" />
+        </interfaces>
+      </unit>
+    </unit>
+    <unit name="CONDENSER" id="MICROSCOPE-CONDENSER" exposed-type-id="#100b" type-ids="#100b,#1001" driver-token="#55c07d0d" instance-id="1">
+      <unit name="CondenserTurret COND-TURRET(7-POS)" id="MICROSCOPE-CONDENSER-TURRET" exposed-type-id="#100c" type-ids="#100c,#1001,#1002,#1022" driver-token="#55c07d0d" instance-id="1">
+        <interfaces>
+          <basic-control-value current="6" min="1" max="7" desc="BF" />
+        </interfaces>
+      </unit>
+    </unit>
+    <unit name="STAGE" id="MICROSCOPE-STAGE" exposed-type-id="#1010" type-ids="#1010,#1002,#1001" driver-token="#55c07d0d" instance-id="1">
+      <unit name="X-UNIT X-AXIS" id="MICROSCOPE-X-UNIT" exposed-type-id="#101a" type-ids="#101a,#1001,#1002" driver-token="#55c07d0d" instance-id="1">
+        <interfaces>
+          <basic-control-value current="303187" min="0" max="864390" desc="41.8955 mm" />
+        </interfaces>
+      </unit>
+      <unit name="Y-UNIT Y-AXIS" id="MICROSCOPE-Y-UNIT" exposed-type-id="#101b" type-ids="#101b,#1001,#1002" driver-token="#55c07d0d" instance-id="1">
+        <interfaces>
+          <basic-control-value current="284064" min="0" max="600750" desc="39.253 mm" />
+        </interfaces>
+      </unit>
+    </unit>
+    <unit name="DICTurret DIC-TURRET" id="MICROSCOPE-DIC-TURRET" exposed-type-id="#1014" type-ids="#1014,#1022,#1023,#1002,#1001" driver-token="#55c07d0d" instance-id="1">
+      <interfaces>
+        <basic-control-value current="4" min="1" max="4" desc="-" />
+        <basic-control-value-special current="-164" min="-5000" max="5000" />
+      </interfaces>
+    </unit>
+    <unit name="MagChanger MAGCHANGER(2-POS)" id="MICROSCOPE-MAGNIFICATION-CHANGER" exposed-type-id="#1019" type-ids="#1019,#1001,#1002" driver-token="#55c07d0d" instance-id="1">
+      <interfaces>
+        <basic-control-value current="1" min="1" max="2" desc="1" />
+      </interfaces>
+    </unit>
+    <unit name="Ports PORTS" id="MICROSCOPE-PORTS" exposed-type-id="#1031" type-ids="#1031,#1001,#1002" driver-token="#55c07d0d" instance-id="1">
+      <interfaces>
+        <basic-control-value current="2" min="1" max="3" />
+      </interfaces>
+    </unit>
+    <unit name="MEMORY" id="MICROSCOPE-MEMORY-FUNCTION-UNIT" exposed-type-id="#103c" type-ids="#103c,#103d" driver-token="#55c07d0d" instance-id="1">
+      <interfaces />
+    </unit>
+    <unit name="ZDrive Z-DRIVE" id="MICROSCOPE-ZDRIVE" exposed-type-id="#1005" type-ids="#1005,#101c,#1001,#1002" driver-token="#55c07d0d" instance-id="1">
+      <driver-extras focus_position="-1" />
+      <interfaces>
+        <basic-control-value current="511196" min="0" max="2368421" desc="1.94254 mm" />
+      </interfaces>
+    </unit>
+    <interfaces>
+      <microscope-contrasting-methods current="205">
+        <supported-methods>
+          <method method-id="100" name="TL-BF" />
+          <method method-id="101" name="TL-PH" />
+          <method method-id="103" name="TL-DIC" />
+          <method method-id="104" name="TL-POL" />
+          <method method-id="105" name="TL-IMC" />
+          <method method-id="205" name="FLUO" />
+          <method method-id="300" name="FLUO-PH" />
+          <method method-id="301" name="FLUO-DIC" />
+        </supported-methods>
+      </microscope-contrasting-methods>
+      <microscope-shearing>
+        <table />
+        <table />
+        <table />
+        <table />
+        <table />
+        <table />
+      </microscope-shearing>
+      <microscope-il-shearing>
+        <table />
+        <table />
+        <table />
+        <table />
+        <table />
+        <table />
+      </microscope-il-shearing>
+      <properties>
+        <property id="STAND" ahm-id="#100">
+          <value type="properties">
+            <properties>
+              <property id="STAND-ARTICLE-CODE" ahm-id="#101">
+                <value type="string">TYPE 11090144280000</value>
+              </property>
+              <property id="STAND-ORDER-NUMBER" ahm-id="#102">
+                <value type="string">11888906</value>
+              </property>
+              <property id="STAND-SERIAL-NUMBER" ahm-id="#103">
+                <value type="string">300887</value>
+              </property>
+              <property id="STAND-ASSEMBLY-QUARTER" ahm-id="#104">
+                <value type="string">1/08</value>
+              </property>
+              <property id="STAND-CONSTRUCTION-STATE" ahm-id="#105">
+                <value type="string">BZ: 00</value>
+              </property>
+              <property id="STAND-DATE" ahm-id="#106">
+                <value type="string">16.02.2008</value>
+              </property>
+              <property id="STAND-NAME" ahm-id="#107">
+                <value type="string">DMI6000B</value>
+              </property>
+              <property id="STAND-METHODS" ahm-id="#108">
+                <value type="string">TL-BF;TL-PH;TL-DIC;TL-POL;TL-IMC;FLUO;FLUO-PH;FLUO-DIC</value>
+              </property>
+              <property id="FIRMWARE" ahm-id="#200">
+                <value type="array">
+                  <value type="properties">
+                    <properties>
+                      <property id="FIRMWARE-MODULE-NAME" ahm-id="#201">
+                        <value type="string">DMI.HEX</value>
+                      </property>
+                      <property id="FIRMWARE-MODULE-VERSION" ahm-id="#202">
+                        <value type="string">V01.32</value>
+                      </property>
+                    </properties>
+                  </value>
+                  <value type="properties">
+                    <properties>
+                      <property id="FIRMWARE-MODULE-NAME" ahm-id="#201">
+                        <value type="string">XYZ_ADV.HEX</value>
+                      </property>
+                      <property id="FIRMWARE-MODULE-VERSION" ahm-id="#202">
+                        <value type="string">V01.20</value>
+                      </property>
+                    </properties>
+                  </value>
+                </value>
+              </property>
+              <property id="ILTURRET-SHUTTER-MODE" ahm-id="#1107">
+                <value type="int">1</value>
+              </property>
+            </properties>
+          </value>
+        </property>
+      </properties>
+    </interfaces>
+  </unit>
+</ahm-snapshot-document>

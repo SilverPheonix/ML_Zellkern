@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<Info>
+  <ImageOverlay
+    type="Channel">
+    <Filter
+      mode="IFW"
+      channel="Blue">BGR</Filter>
+    <ApplyColour>False</ApplyColour>
+    <WaveLength>470</WaveLength>
+    <HistogramSettings
+      blackLevel="0"
+      whiteLevel="255" />
+    <MixLevel>100</MixLevel>
+    <Gamma>1</Gamma>
+    <Exposure>1,02000427246094</Exposure>
+    <Description>FLOU</Description>
+  </ImageOverlay>
+</Info>
