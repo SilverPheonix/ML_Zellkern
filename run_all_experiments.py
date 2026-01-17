@@ -1,3 +1,20 @@
+"""
+run_all_experiments.py
+
+Batch über alle Experimente in ./data/<experiment_folder>/
+
+Speichert pro Experiment in:
+data/<experiment>/results/
+- foci_analysis.csv
+- mask.png
+- original_red_overlay.png               (wie vorher: dunkles Original-Grau + Boxen/Foci)
+- original_red_overlay_redchannel.png    (dezenter: nur FOCI im Rotkanal hervorgehoben; Boxen/IDs bleiben grün)
+
+Erwartete Dateien:
+- *Blue.tif
+- *Red.tif
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -14,27 +31,44 @@ from scipy import ndimage as nd
 from skimage.draw import disk
 
 
-# -------------------- Pfade --------------------
+# -------------------- Settings (Notebook) --------------------
 DATA_DIR = Path("data")
-OUTPUT_DIR = Path("output")
+
+BLUE_GAUSS_SIGMA = 1
+WATERSHED_MIN_DISTANCE = 20
+MIN_SIZE_FACTOR = 0.65
+
+WINDOW_SIZE = 21
+EPSILON = 1e-6
+RED_SMOOTH_SIGMA = 1
+
+BLOB_MIN_SIGMA = 2
+BLOB_MAX_SIGMA = 5
+BLOB_NUM_SIGMA = 10
+BLOB_THRESHOLD = 1
+
+MIN_CELL_AREA = 50
+
+# Wie stark der Rotkanal bei FOCI-Pixeln angehoben werden soll (0..255)
+REDCHANNEL_FOCI_BOOST = 140
 
 
-# -------------------- Notebook-Funktionen (gleiche Logik) --------------------
+# -------------------- Notebook helper --------------------
+
+def ensure_dir(p: Path) -> None:
+    p.mkdir(parents=True, exist_ok=True)
+
 
 def analyze_cell_sizes(li_mask):
     labeled_li = measure.label(li_mask)
     li_props = measure.regionprops(labeled_li)
     li_areas = [r.area for r in li_props]
     if not li_areas:
-        return [], 0
+        return [], 0.0
     return li_props, float(np.mean(li_areas))
 
 
-def get_separated_binary_mask(binary_mask, min_distance=20):
-    """
-    Splits clumped cells from an EXISTING binary mask and returns:
-    final_binary_mask, labeled_cells, areas
-    """
+def get_separated_binary_mask(binary_mask, min_distance=WATERSHED_MIN_DISTANCE):
     binary_mask = binary_mask.astype(bool)
     distance = nd.distance_transform_edt(binary_mask)
 
@@ -42,12 +76,11 @@ def get_separated_binary_mask(binary_mask, min_distance=20):
     if len(coords) == 0:
         return binary_mask, np.zeros_like(binary_mask, dtype=int), []
 
-    mask_seeds = np.zeros(distance.shape, dtype=bool)
-    mask_seeds[tuple(coords.T)] = True
-    markers, _ = nd.label(mask_seeds)
+    seed_mask = np.zeros(distance.shape, dtype=bool)
+    seed_mask[tuple(coords.T)] = True
+    markers, _ = nd.label(seed_mask)
 
     labeled_cells = segmentation.watershed(-distance, markers, mask=binary_mask)
-
     props = measure.regionprops(labeled_cells)
     areas = [r.area for r in props]
 
@@ -58,127 +91,121 @@ def get_separated_binary_mask(binary_mask, min_distance=20):
     return final_binary_mask, labeled_cells, areas
 
 
-def load_red_channel(path: Path) -> np.ndarray:
-    image = io.imread(str(path))
-    if image.ndim == 3:
-        return (image[:, :, 0]).astype(np.uint8)
-    elif image.ndim == 2:
-        return image.astype(np.uint8)
-    else:
-        raise ValueError("Image must be 2D (grayscale) or 3D (color).")
+def load_red_channel_uint8(red_path: Path) -> np.ndarray:
+    img = io.imread(str(red_path))
+    if img.ndim == 3:
+        img = img[:, :, 0]
+    # Wenn ihr 16-bit TIFF habt, wird das hier abgeschnitten. Falls das relevant ist, sag Bescheid.
+    return img.astype(np.uint8)
 
 
 def preprocess_and_normalize(img_red_raw: np.ndarray, window_size: int, epsilon: float):
-    img_red_smoothed = filters.gaussian(img_red_raw, sigma=1)
+    img_red_smoothed = filters.gaussian(img_red_raw, sigma=RED_SMOOTH_SIGMA)
+
     local_mean = nd.uniform_filter(img_red_smoothed, size=window_size)
-    local_std = np.sqrt(nd.uniform_filter(img_red_smoothed ** 2, size=window_size) - local_mean ** 2)
+    ex2 = nd.uniform_filter(img_red_smoothed ** 2, size=window_size)
+    variance = ex2 - local_mean ** 2
+    variance = np.clip(variance, 0, None)  # stabil
+    local_std = np.sqrt(variance)
+
     img_red_norm = (img_red_smoothed - local_mean) / (local_std + epsilon)
     return img_red_norm.astype(np.float32), img_red_smoothed.astype(np.float32)
-
-
-# -------------------- Helpers --------------------
-
-def ensure_dir(p: Path) -> None:
-    p.mkdir(parents=True, exist_ok=True)
-
-
-def normalize_to_u8(img: np.ndarray) -> np.ndarray:
-    arr = img.astype(np.float32)
-    mn, mx = float(arr.min()), float(arr.max())
-    if mx - mn < 1e-9:
-        return np.zeros(arr.shape, dtype=np.uint8)
-    return ((arr - mn) / (mx - mn) * 255.0).clip(0, 255).astype(np.uint8)
 
 
 # -------------------- Pipeline pro Experiment --------------------
 
 def analyze_experiment(folder: Path) -> pd.DataFrame:
     exp_name = folder.name
-    exp_out = OUTPUT_DIR / exp_name
-    ensure_dir(exp_out)
+    results_dir = folder / "results"
+    ensure_dir(results_dir)
 
     blue_path = next(folder.glob("*Blue.tif"))
     red_path = next(folder.glob("*Red.tif"))
 
-    # ---- Blue: grayscale + gaussian + Li threshold ----
+    # ---- Blue: grayscale + blur + Li threshold ----
     original_blue = io.imread(str(blue_path))
     if original_blue.ndim == 3:
         grayscale_blue = color.rgb2gray(original_blue)
     else:
         grayscale_blue = original_blue.astype(np.float32)
 
-    blurred_blue = filters.gaussian(grayscale_blue, sigma=1)
-
+    blurred_blue = filters.gaussian(grayscale_blue, sigma=BLUE_GAUSS_SIGMA)
     li_threshold_value = filters.threshold_li(blurred_blue)
     li_mask_initial = blurred_blue > li_threshold_value
 
     _, average_area = analyze_cell_sizes(li_mask_initial)
     if average_area <= 0:
-        # nichts erkennbar
-        pd.DataFrame().to_csv(exp_out / "foci_analysis.csv", index=False)
-        return pd.DataFrame()
+        empty = pd.DataFrame()
+        empty.to_csv(results_dir / "foci_analysis.csv", index=False)
+        return empty
 
-    min_size_threshold = int(average_area) * 0.65
-    li_mask_filtered = morphology.remove_small_objects(li_mask_initial.astype(bool), min_size=int(min_size_threshold))
+    min_size_threshold = int(average_area) * MIN_SIZE_FACTOR
+    li_mask_filtered = morphology.remove_small_objects(
+        li_mask_initial.astype(bool),
+        min_size=int(min_size_threshold),
+    )
 
-    # ---- Watershed separation (wie Notebook) ----
-    separated_mask, _, _ = get_separated_binary_mask(li_mask_filtered, min_distance=20)
+    # ---- Watershed separation ----
+    separated_mask, _, _ = get_separated_binary_mask(li_mask_filtered, min_distance=WATERSHED_MIN_DISTANCE)
 
-    # Maske speichern
-    cv2.imwrite(str(exp_out / "mask.png"), (separated_mask.astype(np.uint8) * 255))
+    # Output: Maske
+    cv2.imwrite(str(results_dir / "mask.png"), (separated_mask.astype(np.uint8) * 255))
 
     # ---- Red: preprocess + z-score ----
-    WINDOW_SIZE = 21
-    EPSILON = 1e-6
-    img_red_raw = load_red_channel(red_path)
-    img_red_norm, img_red_smoothed = preprocess_and_normalize(img_red_raw, WINDOW_SIZE, EPSILON)
+    img_red_orig_u8 = load_red_channel_uint8(red_path)
+    img_red_norm, img_red_smoothed = preprocess_and_normalize(img_red_orig_u8, WINDOW_SIZE, EPSILON)
 
-    # ---- Zell-Labeling WIE im Notebook: cell_mask aus *smoothed* (nicht zscore!) ----
-    masked_smooth = img_red_smoothed * separated_mask  # <- entscheidend
+    # ---- Zell-Labeling (wie Notebook): cell_mask aus SMOOTHED * separated_mask ----
+    masked_smooth = img_red_smoothed * separated_mask
     cell_mask = masked_smooth > 0
     labeled_cells = measure.label(cell_mask)
-
-    # regionprops: intensity_image = z-score (wie Notebook cell 20)
     regions = measure.regionprops(labeled_cells, intensity_image=img_red_norm)
 
-    # ---- Overlays vorbereiten (wie Notebook) ----
-    smoothed_intensity = img_red_norm.astype(np.float32)
+    # ---- Overlay: GENAU wie vorher (dunkles Original) ----
+    img_red_orig = np.array(Image.open(red_path).convert("L"))  # 1:1 Notebook style
+    overlay = cv2.cvtColor(img_red_orig, cv2.COLOR_GRAY2BGR)
 
-    disp_z = normalize_to_u8(smoothed_intensity)
-    out_z = cv2.cvtColor(disp_z, cv2.COLOR_GRAY2BGR)
+    # ---- Zusatzausgabe: gleiche Basis, aber nur FOCI im Rotkanal hervorheben ----
+    overlay_redchannel = overlay.copy()
 
-    img_red_orig = np.array(Image.open(red_path).convert("L"))
-    disp_orig = normalize_to_u8(img_red_orig)
-    out_orig = cv2.cvtColor(disp_orig, cv2.COLOR_GRAY2BGR)
+    # Maske, in die wir NUR die Foci zeichnen (ohne Boxen/IDs)
+    foci_draw_mask = np.zeros(img_red_orig.shape, dtype=np.uint8)
 
-    # ---- Foci Detection + Annotation (Notebook cell 20) ----
+    # ---- Foci detection + Zeichnen ----
     foci_records = []
     peak_id_counter = 1
 
     for region in regions:
-        if region.area < 50:
+        if region.area < MIN_CELL_AREA:
             continue
 
         cell_avg_intensity = float(region.mean_intensity)
         minr, minc, maxr, maxc = region.bbox
-        cropped_intensity = smoothed_intensity[minr:maxr, minc:maxc]
+        cropped_intensity = img_red_norm[minr:maxr, minc:maxc]
 
         blobs_log = feature.blob_log(
             cropped_intensity,
-            min_sigma=2,
-            max_sigma=5,
-            num_sigma=10,
-            threshold=1,  # wie Notebook cell 20
+            min_sigma=BLOB_MIN_SIGMA,
+            max_sigma=BLOB_MAX_SIGMA,
+            num_sigma=BLOB_NUM_SIGMA,
+            threshold=BLOB_THRESHOLD,
         )
 
         if len(blobs_log) == 0:
             continue
 
-        # Zellbox+ID (nur wenn es Foci gibt, wie Notebook)
-        for img in (out_z, out_orig):
+        # Boxen/IDs: auf beide Overlays (sollen GRUEN bleiben)
+        for img in (overlay, overlay_redchannel):
             cv2.rectangle(img, (minc, minr), (maxc, maxr), (0, 255, 0), 1)
-            cv2.putText(img, f"ID:{region.label}", (minc, max(0, minr - 5)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
+            cv2.putText(
+                img,
+                f"ID:{region.label}",
+                (minc, max(0, minr - 5)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.4,
+                (0, 255, 0),
+                1,
+            )
 
         for local_r, local_c, sigma in blobs_log:
             local_r, local_c = int(local_r), int(local_c)
@@ -187,18 +214,23 @@ def analyze_experiment(folder: Path) -> pd.DataFrame:
             if labeled_cells[global_r, global_c] != region.label:
                 continue
 
-            intensity_at_peak = float(smoothed_intensity[global_r, global_c])
+            intensity_at_peak = float(img_red_norm[global_r, global_c])
             if intensity_at_peak <= cell_avg_intensity:
                 continue
 
             radius = float(sigma * np.sqrt(2))
+            r_px = int(max(1, radius))
 
-            for img in (out_z, out_orig):
-                cv2.circle(img, (global_c, global_r), int(max(1, radius)), (0, 255, 255), 1)
-                cv2.circle(img, (global_c, global_r), 1, (0, 0, 255), -1)
+            # Foci zeichnen: auf beide Overlays
+            for img in (overlay, overlay_redchannel):
+                cv2.circle(img, (global_c, global_r), r_px, (0, 255, 255), 1)  # gelber Ring
+                cv2.circle(img, (global_c, global_r), 1, (0, 0, 255), -1)      # roter Punkt
 
-            rr, cc = disk((global_r, global_c), max(1, int(radius)), shape=smoothed_intensity.shape)
-            focus_mean_intensity = float(np.mean(smoothed_intensity[rr, cc]))
+            # NUR Foci in Maske einzeichnen (damit Rot-Boost nur dort passiert)
+            cv2.circle(foci_draw_mask, (global_c, global_r), r_px, 255, -1)
+
+            rr, cc = disk((global_r, global_c), max(1, int(radius)), shape=img_red_norm.shape)
+            focus_mean_intensity = float(np.mean(img_red_norm[rr, cc]))
 
             foci_records.append({
                 "experiment": exp_name,
@@ -211,29 +243,23 @@ def analyze_experiment(folder: Path) -> pd.DataFrame:
                 "signal_to_cell_ratio": round(intensity_at_peak / cell_avg_intensity, 2),
                 "foci_x": int(global_c),
                 "foci_y": int(global_r),
+                "cell_area": int(region.area),
             })
             peak_id_counter += 1
 
     df = pd.DataFrame(foci_records)
 
-    # ---- Speichern (wie Notebook, nur in output/<exp>/) ----
-    df.to_csv(exp_out / "foci_analysis.csv", index=False)
+    # ---- Rotkanal-Boost NUR dort, wo Foci-Maske gesetzt ist ----
+    if np.any(foci_draw_mask):
+        red = overlay_redchannel[:, :, 2].astype(np.int16)
+        mask_foci = foci_draw_mask > 0
+        red[mask_foci] = np.clip(red[mask_foci] + REDCHANNEL_FOCI_BOOST, 0, 255)
+        overlay_redchannel[:, :, 2] = red.astype(np.uint8)
 
-    cv2.imwrite(str(exp_out / "zscore_overlay.png"), out_z)
-    cv2.imwrite(str(exp_out / "original_red_overlay.png"), out_orig)
-
-    # Vergleichsbild nebeneinander
-    h = min(out_z.shape[0], out_orig.shape[0])
-    combined = np.concatenate([out_z[:h], out_orig[:h]], axis=1)
-    cv2.imwrite(str(exp_out / "foci_comparison.png"), combined)
-
-    total_foci = len(df)
-
-    with open(exp_out / "summary.txt", "w", encoding="utf-8") as f:
-        f.write(f"Total Cells: {len(regions)}\n")
-        f.write(f"Total Foci: {total_foci}\n\n")
-        f.write("Head (first 20 rows):\n")
-        f.write(df.head(20).to_string(index=False))
+    # Output: CSV + Overlays
+    df.to_csv(results_dir / "foci_analysis.csv", index=False)
+    cv2.imwrite(str(results_dir / "original_red_overlay.png"), overlay)
+    cv2.imwrite(str(results_dir / "original_red_overlay_redchannel.png"), overlay_redchannel)
 
     return df
 
@@ -249,8 +275,6 @@ def find_experiment_folders(data_dir: Path) -> list[Path]:
 
 
 def main() -> None:
-    ensure_dir(OUTPUT_DIR)
-
     folders = find_experiment_folders(DATA_DIR)
     print(f"Gefundene Experimente: {len(folders)}")
     if not folders:
@@ -271,14 +295,15 @@ def main() -> None:
             print(f"!! Fehler in {folder.name}: {e}")
             traceback.print_exc()
 
+    # Optional: Gesamt-CSV im Projektroot
     if all_rows:
         df_all = pd.concat(all_rows, ignore_index=True)
-        df_all.to_csv(OUTPUT_DIR / "all_foci_analysis.csv", index=False)
-        print(f"Gesamt-CSV: {OUTPUT_DIR / 'all_foci_analysis.csv'}")
+        df_all.to_csv("all_foci_analysis.csv", index=False)
+        print("Gesamt-CSV: all_foci_analysis.csv")
 
     if failed:
-        pd.DataFrame(failed, columns=["experiment", "error"]).to_csv(OUTPUT_DIR / "failed_experiments.csv", index=False)
-        print(f"Fehlerliste: {OUTPUT_DIR / 'failed_experiments.csv'}")
+        pd.DataFrame(failed, columns=["experiment", "error"]).to_csv("failed_experiments.csv", index=False)
+        print("Fehlerliste: failed_experiments.csv")
 
 
 if __name__ == "__main__":
