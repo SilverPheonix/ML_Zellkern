@@ -1,0 +1,17 @@
+@'
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Projekt-Outputs
+data/*/results/
+all_foci_analysis.csv
+failed_experiments.csv
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+'@ | Set-Content -Encoding utf8 .gitignore
