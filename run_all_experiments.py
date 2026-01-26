@@ -1,28 +1,73 @@
 """
-run_all_experiments.py
+AUTOMATED FOCI ANALYSIS PIPELINE
 
-Batch über alle Experimente in ./data/<experiment_folder>/
+PURPOSE:
+Batch processes multi-channel microscopy images to segment cell nuclei and
+detect sub-nuclear signals (foci).
 
-Speichert pro Experiment in:
-data/<experiment>/results/
-- foci_analysis.csv
-- mask.png
-- original_red_overlay.png               (wie vorher: dunkles Original-Grau + Boxen/Foci)
-- original_red_overlay_redchannel.png    (dezenter: nur FOCI im Rotkanal hervorgehoben; Boxen/IDs bleiben grün)
+WORKFLOW:
+1. Nuclei Segmentation (Blue Channel):
+   - Applies Li-thresholding and morphological filtering.
+   - Uses Watershed transformation to separate touching nuclei.
+   - Generates a binary 'mask.png'.
 
-Erwartete Dateien:
-- *Blue.tif
-- *Red.tif
+2. Signal Preprocessing (Red Channel):
+   - Performs local Z-score normalization (Background subtraction) using
+     a sliding window to highlight peaks relative to local intensity.
+
+3. Foci Detection (Red Channel):
+   - Detects blobs using the Laplacian of Gaussian (LoG) method.
+   - Filters candidates based on cell-specific mean intensity and mask boundaries.
+
+4. Outputs (per experiment folder):
+   - 'foci_analysis.csv': Granular data for every detected foci.
+   - 'cell_summary.csv': Total foci count per cell.
+   - 'original_red_overlay.png': Diagnostic image with bounding boxes and markers.
+   - 'original_red_overlay_redchannel.png': Visualization with boosted foci intensity.
+
+CONFIGURABILITY:
+All detection thresholds, sigma values, and scaling factors are controlled
+via an external 'config.yaml' file.
+
+RUN SCRIPT SUCCESSFULLY:
+
+1. PREREQUISITES:
+   Ensure you have the required libraries installed:
+   $ pip install pyyaml numpy pandas opencv-python pillow scikit-image scipy
+
+2. CONFIGURATION:
+   - Edit 'config.yaml' in the same folder as this script.
+   - Set 'data_dir' to the absolute path of your experiment data.
+   - Adjust 'foci_detection' parameters to tune sensitivity.
+
+3. DATA STRUCTURE:
+   The 'data_dir' must contain subfolders. Each subfolder needs:
+   - One file ending in '*Blue.tif' (Nuclei)
+   - One file ending in '*Red.tif'  (Foci)
+
+4. EXECUTION (Terminal/Command Line):
+   Navigate to the script's directory:
+   $ cd C:/Users/thebl/PycharmProjects/Foci_Count_Project
+   Run the script:
+   $ python run_all_experiments.py
+
+5. RESULTS:
+   Check each experiment subfolder for a 'results' directory containing:
+   - cell_summary.csv: Count per cell + config parameters used.
+   - foci_analysis.csv: Detailed coordinates and intensity for every focus.
+   - Visualizations (mask.png and overlays).
 """
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import traceback
 
 import numpy as np
 import pandas as pd
 import cv2
+import yaml
 from PIL import Image
 
 from skimage import io, filters, color, measure, morphology, feature, segmentation
@@ -31,26 +76,30 @@ from scipy import ndimage as nd
 from skimage.draw import disk
 
 
-# -------------------- Settings (Notebook) --------------------
-DATA_DIR = Path("data")
+# -------------------- Settings --------------------
+def load_config(config_path="config.yaml"):
+    with open(config_path, "r") as f:
+        return yaml.safe_load(f)
 
-BLUE_GAUSS_SIGMA = 1
-WATERSHED_MIN_DISTANCE = 20
-MIN_SIZE_FACTOR = 0.65
+SCRIPT_DIR = Path(__file__).parent.absolute()
+cfg = load_config(SCRIPT_DIR / "config.yaml")
 
-WINDOW_SIZE = 21
-EPSILON = 1e-6
-RED_SMOOTH_SIGMA = 1
+DATA_DIR = Path(cfg.get('paths', {}).get('data_dir', 'data'))
 
-BLOB_MIN_SIGMA = 2
-BLOB_MAX_SIGMA = 5
-BLOB_NUM_SIGMA = 10
-BLOB_THRESHOLD = 1
+BLUE_GAUSS_SIGMA = cfg['segmentation']['blue_gauss_sigma']
+WATERSHED_MIN_DISTANCE = cfg['segmentation']['watershed_min_distance']
+MIN_SIZE_FACTOR = cfg['segmentation']['min_size_factor']
+MIN_CELL_AREA = cfg['segmentation']['min_cell_area']
 
-MIN_CELL_AREA = 50
+WINDOW_SIZE = cfg['preprocessing']['window_size']
+EPSILON = float(cfg['preprocessing']['epsilon'])
+RED_SMOOTH_SIGMA = cfg['preprocessing']['red_smooth_sigma']
 
-# Wie stark der Rotkanal bei FOCI-Pixeln angehoben werden soll (0..255)
-REDCHANNEL_FOCI_BOOST = 140
+BLOB_MIN_SIGMA = cfg['foci_detection']['blob_min_sigma']
+BLOB_MAX_SIGMA = cfg['foci_detection']['blob_max_sigma']
+BLOB_NUM_SIGMA = cfg['foci_detection']['blob_num_sigma']
+BLOB_THRESHOLD = cfg['foci_detection']['blob_threshold']
+REDCHANNEL_FOCI_BOOST = cfg['foci_detection']['redchannel_foci_boost']
 
 
 # -------------------- Notebook helper --------------------
@@ -194,7 +243,7 @@ def analyze_experiment(folder: Path) -> pd.DataFrame:
         if len(blobs_log) == 0:
             continue
 
-        # Boxen/IDs: auf beide Overlays (sollen GRUEN bleiben)
+        # Boxen/IDs: auf beide Overlays
         for img in (overlay, overlay_redchannel):
             cv2.rectangle(img, (minc, minr), (maxc, maxr), (0, 255, 0), 1)
             cv2.putText(
@@ -258,6 +307,18 @@ def analyze_experiment(folder: Path) -> pd.DataFrame:
 
     # Output: CSV + Overlays
     df.to_csv(results_dir / "foci_analysis.csv", index=False)
+    # Summary over nucleai
+    if not df.empty:
+        # Group by cell_id and cound Foci
+        summary_df = df.groupby("cell_id")["peak_id"].count().reset_index()
+        summary_df.columns = ["cell_id", "foci_count"]
+
+        summary_df.to_csv(results_dir / "cell_summary.csv", index=False)
+    else:
+        # If no Foci detected; create empty csv
+        summary_df = pd.DataFrame(columns=["cell_id", "foci_count"])
+        summary_df.to_csv(results_dir / "cell_summary.csv", index=False)
+
     cv2.imwrite(str(results_dir / "original_red_overlay.png"), overlay)
     cv2.imwrite(str(results_dir / "original_red_overlay_redchannel.png"), overlay_redchannel)
 
