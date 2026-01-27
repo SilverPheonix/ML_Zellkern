@@ -102,8 +102,6 @@ BLOB_THRESHOLD = cfg['foci_detection']['blob_threshold']
 REDCHANNEL_FOCI_BOOST = cfg['foci_detection']['redchannel_foci_boost']
 
 
-# -------------------- Notebook helper --------------------
-
 def ensure_dir(p: Path) -> None:
     p.mkdir(parents=True, exist_ok=True)
 
@@ -139,12 +137,29 @@ def get_separated_binary_mask(binary_mask, min_distance=WATERSHED_MIN_DISTANCE):
 
     return final_binary_mask, labeled_cells, areas
 
+def red_to_bgr_display(img_red_u8: np.ndarray, p_low=1.0, p_high=99.0) -> np.ndarray:
+    """
+    Kontrast-Stretch + Rot einfärben (BGR: nur Kanal 2)
+    """
+    arr = img_red_u8.astype(np.float32)
+    lo = np.percentile(arr, p_low)
+    hi = np.percentile(arr, p_high)
+
+    if hi - lo < 1e-6:
+        scaled = np.zeros_like(arr, dtype=np.uint8)
+    else:
+        scaled = ((arr - lo) / (hi - lo) * 255.0)
+        scaled = np.clip(scaled, 0, 255).astype(np.uint8)
+
+    out = np.zeros((scaled.shape[0], scaled.shape[1], 3), dtype=np.uint8)
+    out[:, :, 2] = scaled  # Rotkanal
+    return out
+
 
 def load_red_channel_uint8(red_path: Path) -> np.ndarray:
     img = io.imread(str(red_path))
     if img.ndim == 3:
         img = img[:, :, 0]
-    # Wenn ihr 16-bit TIFF habt, wird das hier abgeschnitten. Falls das relevant ist, sag Bescheid.
     return img.astype(np.uint8)
 
 
@@ -204,23 +219,24 @@ def analyze_experiment(folder: Path) -> pd.DataFrame:
     img_red_orig_u8 = load_red_channel_uint8(red_path)
     img_red_norm, img_red_smoothed = preprocess_and_normalize(img_red_orig_u8, WINDOW_SIZE, EPSILON)
 
-    # ---- Zell-Labeling (wie Notebook): cell_mask aus SMOOTHED * separated_mask ----
+    # ---- Zell-Labeling ----
     masked_smooth = img_red_smoothed * separated_mask
     cell_mask = masked_smooth > 0
     labeled_cells = measure.label(cell_mask)
     regions = measure.regionprops(labeled_cells, intensity_image=img_red_norm)
 
-    # ---- Overlay: GENAU wie vorher (dunkles Original) ----
-    img_red_orig = np.array(Image.open(red_path).convert("L"))  # 1:1 Notebook style
-    overlay = cv2.cvtColor(img_red_orig, cv2.COLOR_GRAY2BGR)
+    # ---- Overlay (ROT) ----
+    img_red_orig = img_red_orig_u8
+    # Graues Overlay (neutral)
+    overlay_gray = cv2.cvtColor(img_red_orig, cv2.COLOR_GRAY2BGR)
 
-    # ---- Zusatzausgabe: gleiche Basis, aber nur FOCI im Rotkanal hervorheben ----
-    overlay_redchannel = overlay.copy()
+    # Rotes Overlay
+    overlay_redchannel = red_to_bgr_display(img_red_orig, p_low=1.0, p_high=99.0)
 
-    # Maske, in die wir NUR die Foci zeichnen (ohne Boxen/IDs)
+    # ---- Mask ----
     foci_draw_mask = np.zeros(img_red_orig.shape, dtype=np.uint8)
 
-    # ---- Foci detection + Zeichnen ----
+    # ---- Foci detection ----
     foci_records = []
     peak_id_counter = 1
 
@@ -243,8 +259,8 @@ def analyze_experiment(folder: Path) -> pd.DataFrame:
         if len(blobs_log) == 0:
             continue
 
-        # Boxen/IDs: auf beide Overlays
-        for img in (overlay, overlay_redchannel):
+
+        for img in (overlay_gray, overlay_redchannel):
             cv2.rectangle(img, (minc, minr), (maxc, maxr), (0, 255, 0), 1)
             cv2.putText(
                 img,
@@ -270,12 +286,12 @@ def analyze_experiment(folder: Path) -> pd.DataFrame:
             radius = float(sigma * np.sqrt(2))
             r_px = int(max(1, radius))
 
-            # Foci zeichnen: auf beide Overlays
-            for img in (overlay, overlay_redchannel):
+            # Draw Foci
+            for img in (overlay_gray, overlay_redchannel):
                 cv2.circle(img, (global_c, global_r), r_px, (0, 255, 255), 1)  # gelber Ring
                 cv2.circle(img, (global_c, global_r), 1, (0, 0, 255), -1)      # roter Punkt
 
-            # NUR Foci in Maske einzeichnen (damit Rot-Boost nur dort passiert)
+
             cv2.circle(foci_draw_mask, (global_c, global_r), r_px, 255, -1)
 
             rr, cc = disk((global_r, global_c), max(1, int(radius)), shape=img_red_norm.shape)
@@ -298,7 +314,7 @@ def analyze_experiment(folder: Path) -> pd.DataFrame:
 
     df = pd.DataFrame(foci_records)
 
-    # ---- Rotkanal-Boost NUR dort, wo Foci-Maske gesetzt ist ----
+
     if np.any(foci_draw_mask):
         red = overlay_redchannel[:, :, 2].astype(np.int16)
         mask_foci = foci_draw_mask > 0
@@ -319,7 +335,7 @@ def analyze_experiment(folder: Path) -> pd.DataFrame:
         summary_df = pd.DataFrame(columns=["cell_id", "foci_count"])
         summary_df.to_csv(results_dir / "cell_summary.csv", index=False)
 
-    cv2.imwrite(str(results_dir / "original_red_overlay.png"), overlay)
+    cv2.imwrite(str(results_dir / "original_red_overlay.png"), overlay_gray)
     cv2.imwrite(str(results_dir / "original_red_overlay_redchannel.png"), overlay_redchannel)
 
     return df
@@ -356,7 +372,7 @@ def main() -> None:
             print(f"!! Fehler in {folder.name}: {e}")
             traceback.print_exc()
 
-    # Optional: Gesamt-CSV im Projektroot
+
     if all_rows:
         df_all = pd.concat(all_rows, ignore_index=True)
         df_all.to_csv("all_foci_analysis.csv", index=False)
