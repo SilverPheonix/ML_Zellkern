@@ -1,0 +1,24 @@
+# All parameters of run_all_experiments.py
+paths:
+  data_dir: "C:\\Users\\thebl\\PycharmProjects\\Foci_Count_Project\\data" # Input path to folder containing experiments
+
+# Parameter for Nucleus segmentation in blue channel
+segmentation:
+  blue_gauss_sigma: 1
+  watershed_min_distance: 20 # Adjust if Nucleai seperation is not satisfactory (lower for finer separation)
+  min_size_factor: 0.65
+  min_cell_area: 50
+
+# Parameters for preprocessing red channel
+preprocessing:
+  window_size: 21
+  epsilon: 1.0e-6
+  red_smooth_sigma: 1
+
+# Parameters for Foci detection (blob detection)
+foci_detection:
+  blob_min_sigma: 2
+  blob_max_sigma: 5
+  blob_num_sigma: 10
+  blob_threshold: 1.0 # Most important threshold for Foci detection (lower for finer detection)
+  redchannel_foci_boost: 140
