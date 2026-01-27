@@ -47,6 +47,7 @@ RUN SCRIPT SUCCESSFULLY:
 
 4. EXECUTION (Terminal/Command Line):
    Navigate to the script's directory:
+   $ pip install -r reqirements
    $ cd C:/Users/thebl/PycharmProjects/Foci_Count_Project
    Run the script:
    $ python run_all_experiments.py
@@ -56,7 +57,17 @@ RUN SCRIPT SUCCESSFULLY:
    - cell_summary.csv: Count per cell + config parameters used.
    - foci_analysis.csv: Detailed coordinates and intensity for every focus.
    - Visualizations (mask.png and overlays).
-"""
+   -
+
+       DATA_DIR/
+    └── EX DD day NNNN/
+        ├── Image_Blue.tif
+        ├── Image_Red.tif
+        └── results/              <-- NEW FOLDER CREATED
+            ├── mask.png
+            ├── foci_analysis.csv
+            └── ... (other files)
+    """
 
 from __future__ import annotations
 
@@ -138,9 +149,7 @@ def get_separated_binary_mask(binary_mask, min_distance=WATERSHED_MIN_DISTANCE):
     return final_binary_mask, labeled_cells, areas
 
 def red_to_bgr_display(img_red_u8: np.ndarray, p_low=1.0, p_high=99.0) -> np.ndarray:
-    """
-    Kontrast-Stretch + Rot einfärben (BGR: nur Kanal 2)
-    """
+
     arr = img_red_u8.astype(np.float32)
     lo = np.percentile(arr, p_low)
     hi = np.percentile(arr, p_high)
@@ -152,7 +161,7 @@ def red_to_bgr_display(img_red_u8: np.ndarray, p_low=1.0, p_high=99.0) -> np.nda
         scaled = np.clip(scaled, 0, 255).astype(np.uint8)
 
     out = np.zeros((scaled.shape[0], scaled.shape[1], 3), dtype=np.uint8)
-    out[:, :, 2] = scaled  # Rotkanal
+    out[:, :, 2] = scaled
     return out
 
 
@@ -169,14 +178,14 @@ def preprocess_and_normalize(img_red_raw: np.ndarray, window_size: int, epsilon:
     local_mean = nd.uniform_filter(img_red_smoothed, size=window_size)
     ex2 = nd.uniform_filter(img_red_smoothed ** 2, size=window_size)
     variance = ex2 - local_mean ** 2
-    variance = np.clip(variance, 0, None)  # stabil
+    variance = np.clip(variance, 0, None)
     local_std = np.sqrt(variance)
 
     img_red_norm = (img_red_smoothed - local_mean) / (local_std + epsilon)
     return img_red_norm.astype(np.float32), img_red_smoothed.astype(np.float32)
 
 
-# -------------------- Pipeline pro Experiment --------------------
+# -------------------- Pipeline per experiment --------------------
 
 def analyze_experiment(folder: Path) -> pd.DataFrame:
     exp_name = folder.name
@@ -212,25 +221,25 @@ def analyze_experiment(folder: Path) -> pd.DataFrame:
     # ---- Watershed separation ----
     separated_mask, _, _ = get_separated_binary_mask(li_mask_filtered, min_distance=WATERSHED_MIN_DISTANCE)
 
-    # Output: Maske
+    # Output: Mask
     cv2.imwrite(str(results_dir / "mask.png"), (separated_mask.astype(np.uint8) * 255))
 
     # ---- Red: preprocess + z-score ----
     img_red_orig_u8 = load_red_channel_uint8(red_path)
     img_red_norm, img_red_smoothed = preprocess_and_normalize(img_red_orig_u8, WINDOW_SIZE, EPSILON)
 
-    # ---- Zell-Labeling ----
+    # ---- Cell-Labeling ----
     masked_smooth = img_red_smoothed * separated_mask
     cell_mask = masked_smooth > 0
     labeled_cells = measure.label(cell_mask)
     regions = measure.regionprops(labeled_cells, intensity_image=img_red_norm)
 
-    # ---- Overlay (ROT) ----
+    # ---- Overlay (RED) ----
     img_red_orig = img_red_orig_u8
-    # Graues Overlay (neutral)
+    # Gray Overlay (neutral)
     overlay_gray = cv2.cvtColor(img_red_orig, cv2.COLOR_GRAY2BGR)
 
-    # Rotes Overlay
+    # Red Overlay
     overlay_redchannel = red_to_bgr_display(img_red_orig, p_low=1.0, p_high=99.0)
 
     # ---- Mask ----
@@ -288,8 +297,8 @@ def analyze_experiment(folder: Path) -> pd.DataFrame:
 
             # Draw Foci
             for img in (overlay_gray, overlay_redchannel):
-                cv2.circle(img, (global_c, global_r), r_px, (0, 255, 255), 1)  # gelber Ring
-                cv2.circle(img, (global_c, global_r), 1, (0, 0, 255), -1)      # roter Punkt
+                cv2.circle(img, (global_c, global_r), r_px, (0, 255, 255), 1)
+                cv2.circle(img, (global_c, global_r), 1, (0, 0, 255), -1)
 
 
             cv2.circle(foci_draw_mask, (global_c, global_r), r_px, 255, -1)
@@ -301,11 +310,9 @@ def analyze_experiment(folder: Path) -> pd.DataFrame:
                 "experiment": exp_name,
                 "cell_id": int(region.label),
                 "peak_id": int(peak_id_counter),
-                "cell_intensity_mean": round(cell_avg_intensity, 4),
                 "foci_intensity_peak": round(intensity_at_peak, 4),
                 "foci_intensity_mean_disk": round(focus_mean_intensity, 4),
                 "foci_radius": round(radius, 2),
-                "signal_to_cell_ratio": round(intensity_at_peak / cell_avg_intensity, 2),
                 "foci_x": int(global_c),
                 "foci_y": int(global_r),
                 "cell_area": int(region.area),
@@ -353,9 +360,9 @@ def find_experiment_folders(data_dir: Path) -> list[Path]:
 
 def main() -> None:
     folders = find_experiment_folders(DATA_DIR)
-    print(f"Gefundene Experimente: {len(folders)}")
+    print(f"Found experiments: {len(folders)}")
     if not folders:
-        print("Keine Experiment-Ordner mit *Blue.tif und *Red.tif gefunden.")
+        print("No experiment folders with *Blue.tif and *Red.tif found.")
         return
 
     all_rows = []
@@ -369,18 +376,18 @@ def main() -> None:
                 all_rows.append(df)
         except Exception as e:
             failed.append((folder.name, repr(e)))
-            print(f"!! Fehler in {folder.name}: {e}")
+            print(f"!! Error in {folder.name}: {e}")
             traceback.print_exc()
 
 
     if all_rows:
         df_all = pd.concat(all_rows, ignore_index=True)
-        df_all.to_csv("all_foci_analysis.csv", index=False)
-        print("Gesamt-CSV: all_foci_analysis.csv")
+        df_all.to_csv("all_experiments_analysis.csv", index=False)
+        print("Global-CSV: all_experiments_analysis.csv")
 
     if failed:
         pd.DataFrame(failed, columns=["experiment", "error"]).to_csv("failed_experiments.csv", index=False)
-        print("Fehlerliste: failed_experiments.csv")
+        print("Errorlist: failed_experiments.csv")
 
 
 if __name__ == "__main__":
